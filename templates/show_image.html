@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Imagem Renderizada</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: #f0f2f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .container {
+            background: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            padding: 40px;
+            width: 500px;
+            text-align: center;
+        }
+        h1 {
+            font-size: 24px;
+            color: #333;
+        }
+        img {
+            max-width: 100%;
+            border-radius: 8px;
+        }
+        .download-btn {
+            margin-top: 20px;
+            background-color: #1877f2;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        .download-btn:hover {
+            background-color: #165eae;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Imagem Renderizada</h1>
+        <img src="{{ url_for('static', filename='enhanced/' + filename) }}" alt="Imagem aprimorada">
+        <br>
+        <a href="{{ url_for('download', filename=filename) }}" class="download-btn">Baixar Imagem</a>
+    </div>
+</body>
+</html>
