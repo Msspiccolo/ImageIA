@@ -1,16 +1,17 @@
-from flask import Flask, render_template, request, redirect, url_for, send_file
+from flask import Flask, render_template, request, redirect, url_for, send_file, flash
 import os
 from werkzeug.utils import secure_filename
 from PIL import Image, ImageEnhance, ImageOps, ImageFilter
+import zipfile
+import io
 
 app = Flask(__name__)
+app.secret_key = 'supersecretkey'
 app.config['UPLOAD_FOLDER'] = 'uploads'
-app.config['ENHANCED_FOLDER'] = 'static/enhanced'
 app.config['ALLOWED_EXTENSIONS'] = {'png', 'jpg', 'jpeg'}
+ENHANCED_FOLDER = None
 
-# Criar diretórios, se não existirem
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
-os.makedirs(app.config['ENHANCED_FOLDER'], exist_ok=True)
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in app.config['ALLOWED_EXTENSIONS']
@@ -20,7 +21,6 @@ def enhance_image(input_path, output_path):
         with Image.open(input_path) as img:
             img = img.convert("RGB")
 
-            # Aplicar aprimoramentos
             img = ImageOps.autocontrast(img)
             brightness_enhancer = ImageEnhance.Brightness(img)
             img = brightness_enhancer.enhance(1.1)
@@ -30,23 +30,36 @@ def enhance_image(input_path, output_path):
             contrast_enhancer = ImageEnhance.Contrast(img)
             img = contrast_enhancer.enhance(1.5)
 
-            # Salvar imagem aprimorada
             img.save(output_path)
     except Exception as e:
         print(f"Erro ao aprimorar a imagem: {e}")
         raise ValueError("Erro ao carregar a imagem.") from e
 
-@app.route('/')
+@app.route('/', methods=['GET', 'POST'])
 def index():
-    return render_template('index.html')
+    global ENHANCED_FOLDER
+    if request.method == 'POST':
+        enhanced_folder = request.form.get('output_directory')
+        if enhanced_folder:
+            if not os.path.isdir(enhanced_folder):
+                os.makedirs(enhanced_folder, exist_ok=True)
+            ENHANCED_FOLDER = enhanced_folder
+            flash(f"Diretório configurado: {ENHANCED_FOLDER}")
+        else:
+            flash("Por favor, insira um diretório válido.")
+    return render_template('index.html', enhanced_folder=ENHANCED_FOLDER)
 
 @app.route('/upload', methods=['POST'])
 def upload():
+    if ENHANCED_FOLDER is None:
+        flash("Por favor, configure o diretório de saída antes de fazer o upload.")
+        return redirect(url_for('index'))
+
     if 'file' not in request.files:
-        print("Nenhum arquivo enviado.")
+        flash("Nenhum arquivo enviado.")
         return redirect(request.url)
 
-    files = request.files.getlist('file')  # Obter lista de arquivos
+    files = request.files.getlist('file')
 
     enhanced_files = []
 
@@ -58,16 +71,18 @@ def upload():
             file.save(input_path)
 
             enhanced_filename = f"imagem_renderizada_{filename}"
-            output_path = os.path.join(app.config['ENHANCED_FOLDER'], enhanced_filename)
+            output_path = os.path.join(ENHANCED_FOLDER, enhanced_filename)
 
             try:
                 enhance_image(input_path, output_path)
-                enhanced_files.append(enhanced_filename)  # Adicionar nome à lista
+                enhanced_files.append(enhanced_filename)
             except ValueError as e:
-                return str(e)
+                flash(str(e))
+                return redirect(url_for('index'))
 
     if not enhanced_files:
-        return 'Nenhuma imagem válida foi processada.'
+        flash('Nenhuma imagem válida foi processada.')
+        return redirect(url_for('index'))
 
     return redirect(url_for('show_images', filenames=",".join(enhanced_files)))
 
@@ -79,10 +94,28 @@ def show_images(filenames):
 @app.route('/download/<filename>')
 def download(filename):
     try:
-        image_path = os.path.join(app.config['ENHANCED_FOLDER'], filename)
+        image_path = os.path.join(ENHANCED_FOLDER, filename)
         return send_file(image_path, as_attachment=True)
     except FileNotFoundError:
         return 'Arquivo não encontrado', 404
+
+@app.route('/download_all')
+def download_all():
+    if ENHANCED_FOLDER is None:
+        return 'Diretório de saída não configurado', 400
+
+    try:
+        # Criar um arquivo ZIP na memória
+        memory_file = io.BytesIO()
+        with zipfile.ZipFile(memory_file, 'w') as zf:
+            for filename in os.listdir(ENHANCED_FOLDER):
+                file_path = os.path.join(ENHANCED_FOLDER, filename)
+                zf.write(file_path, arcname=filename)
+
+        memory_file.seek(0)
+        return send_file(memory_file, mimetype='application/zip', as_attachment=True, download_name='imagens_processadas.zip')
+    except Exception as e:
+        return f"Erro ao criar arquivo ZIP: {e}", 500
 
 if __name__ == '__main__':
     app.run(debug=True)
