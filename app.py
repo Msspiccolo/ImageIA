@@ -9,7 +9,7 @@ app = Flask(__name__)
 app.secret_key = 'supersecretkey'
 app.config['UPLOAD_FOLDER'] = 'uploads'
 app.config['ALLOWED_EXTENSIONS'] = {'png', 'jpg', 'jpeg'}
-ENHANCED_FOLDER = None
+ENHANCED_FOLDER = './static/enhanced'
 
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
@@ -98,7 +98,7 @@ def upload():
 @app.route('/show_images/<filenames>')
 def show_images(filenames):
     filenames = filenames.split(",")
-    return render_template('show_image.html', filenames=filenames)
+    return render_template('show_image.html', filenames=filenames[0])
 
 @app.route('/download/<filename>')
 def download(filename):
