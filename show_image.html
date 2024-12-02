@@ -65,7 +65,7 @@
         <div class="images">
             {% for filename in filenames %}
             <div class="image-container">
-                <img src="{{ url_for('static', filename='enhanced/' + filename) }}" alt="Imagem aprimorada">
+                <img src="{{ url_for('static', filename=filename) }}" alt="Imagem aprimorada">
                 <a href="{{ url_for('download', filename=filename) }}" class="download-btn">Baixar</a>
             </div>
             {% endfor %}

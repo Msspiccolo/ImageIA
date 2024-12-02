@@ -49,9 +49,9 @@
 <body>
     <div class="container">
         <h1>Imagem Renderizada</h1>
-        <img src="{{ url_for('static', filename='enhanced/' + filename) }}" alt="Imagem aprimorada">
+        <img src="{{ url_for('static', filename='enhanced/'+filenames) }}" alt="Imagem aprimorada">
         <br>
-        <a href="{{ url_for('download', filename=filename) }}" class="download-btn">Baixar Imagem</a>
+        <a href="{{ url_for('download', filename=filenames) }}" class="download-btn">Baixar Imagem</a>
     </div>
 </body>
 </html>
