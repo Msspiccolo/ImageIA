@@ -1,7 +1,7 @@
 from flask import Flask, render_template, request, redirect, url_for, send_file, flash
 import os
 from werkzeug.utils import secure_filename
-from PIL import Image, ImageEnhance, ImageOps, ImageFilter
+from PIL import Image, ImageEnhance, ImageOps
 import zipfile
 import io
 
@@ -17,23 +17,32 @@ def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in app.config['ALLOWED_EXTENSIONS']
 
 def enhance_image(input_path, output_path):
+
     try:
         with Image.open(input_path) as img:
             img = img.convert("RGB")
 
-            img = ImageOps.autocontrast(img)
+            img = ImageOps.autocontrast(img, cutoff=3)
+
+
             brightness_enhancer = ImageEnhance.Brightness(img)
             img = brightness_enhancer.enhance(1.1)
-            img = img.filter(ImageFilter.DETAIL)
-            sharpness_enhancer = ImageEnhance.Sharpness(img)
-            img = sharpness_enhancer.enhance(3.0)
+
+
             contrast_enhancer = ImageEnhance.Contrast(img)
-            img = contrast_enhancer.enhance(1.5)
+            img = contrast_enhancer.enhance(1.3)
+            sharpness_enhancer = ImageEnhance.Sharpness(img)
+            img = sharpness_enhancer.enhance(2.0)
+
+            upscale_factor = 2
+            width, height = img.size
+            img = img.resize((width * upscale_factor, height * upscale_factor), Image.Resampling.LANCZOS)
+
 
             img.save(output_path)
     except Exception as e:
         print(f"Erro ao aprimorar a imagem: {e}")
-        raise ValueError("Erro ao carregar a imagem.") from e
+        raise ValueError("Erro ao processar a imagem.") from e
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
@@ -70,7 +79,7 @@ def upload():
 
             file.save(input_path)
 
-            enhanced_filename = f"imagem_renderizada_{filename}"
+            enhanced_filename = f"imagem_aprimorada_{filename}"
             output_path = os.path.join(ENHANCED_FOLDER, enhanced_filename)
 
             try:
@@ -118,4 +127,5 @@ def download_all():
         return f"Erro ao criar arquivo ZIP: {e}", 500
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    port = int(os.environ.get("PORT",5000))
+    app.run(host = "0.0.0.0", port=port)
