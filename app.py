@@ -9,7 +9,7 @@ app = Flask(__name__)
 app.secret_key = 'supersecretkey'
 app.config['UPLOAD_FOLDER'] = 'uploads'
 app.config['ALLOWED_EXTENSIONS'] = {'png', 'jpg', 'jpeg'}
-ENHANCED_FOLDER = './static/enhanced'
+ENHANCED_FOLDER = None
 
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
@@ -98,7 +98,7 @@ def upload():
 @app.route('/show_images/<filenames>')
 def show_images(filenames):
     filenames = filenames.split(",")
-    return render_template('show_image.html', filenames=filenames[0])
+    return render_template('show_image.html', filenames=filenames)
 
 @app.route('/download/<filename>')
 def download(filename):
@@ -126,6 +126,6 @@ def download_all():
     except Exception as e:
         return f"Erro ao criar arquivo ZIP: {e}", 500
 
-if __name__ == '__main__':
-    port = int(os.environ.get("PORT",5000))
-    app.run(host = "0.0.0.0", port=port)
+
+app.run(host="0.0.0.0", port=5000)
+
